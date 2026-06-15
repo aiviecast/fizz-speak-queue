@@ -1,0 +1,75 @@
+// fizz_speak_queue — 逐次再生キューの状態機械 + 再生境界イベント導出(§5 speak-queue)。
+//
+// 責務 (一行): speak-item を順序保証で逐次再生する際の「再生境界で何を同期発火するか」と
+// 「キュー状態機械の遷移判定(drain 起動/継続/再起動/idle バリア)」を純粋に決める。
+//
+// 実際の音声再生(playAudio)・delegate コールバック・Promise は host の async I/O。
+// 何を・どの順で発火するか、いつ drain を回すか、は純粋なので Almide に集約=単一の正本。
+// (元コードも「delegate で decouple して unit-test 可能に」と明言している。)
+// 移植元: openaituber src/speech/speakQueue.ts (enqueue/drain/waitForIdle の判定ロジック)。
+
+import string
+import list
+
+// ---- 再生境界イベント導出(item ごとに playAudio 直前に発火する副作用の順序) ----
+//
+// 元コード drain():
+//   setEmotion(emotion)        // 常に
+//   if (hair) setHair(hair)    // hair があれば
+//   if (fx)   setFx(fx)        // fx があれば
+//   setReply(text)             // 常に
+//   → playAudio(...)
+// emotion / reply は常に発火、hair / fx は値が非空のときだけ発火する。
+
+// hair 適用イベントが発火するか。
+fn fires_hair(hair: String) -> Bool = hair != ""
+
+// fx 適用イベントが発火するか。
+fn fires_fx(fx: String) -> Bool = fx != ""
+
+// playAudio 直前に発火するイベント種別を発火順で返す。
+//   常に "emotion" 始まり / "reply" 終わり、間に hair・fx(あれば、この順)。
+fn play_events(hair: String, fx: String) -> List[String] = {
+  var acc: List[String] = []
+  list.push(acc, "emotion")
+  if fires_hair(hair) then list.push(acc, "hair") else {}
+  if fires_fx(fx) then list.push(acc, "fx") else {}
+  list.push(acc, "reply")
+  acc
+}
+
+// 発火イベント数(常時 2 = emotion + reply、hair/fx があれば +1 ずつ)。
+fn event_count(hair: String, fx: String) -> Int =
+  2 + (if fires_hair(hair) then 1 else 0) + (if fires_fx(fx) then 1 else 0)
+
+// audioMime の既定解決(元コード: item.audioMime ?? "audio/mpeg")。
+fn resolve_mime(mime: String) -> String = if mime == "" then "audio/mpeg" else mime
+
+// ---- キュー状態機械の遷移判定 ----
+//
+// 状態は host が持つ {pending: キュー長, playing: 再生中か, aborted: 中断済みか}。
+// 以下は純粋な判定関数で、host はこれに従って drain を回す / バリアを解放する。
+
+// enqueue 時: 新しい drain を起動すべきか(再生中でなければ起動)。
+//   元コード: enqueue() { queue.push(item); if (!isPlaying) drain(); }
+fn should_start_drain(playing: Bool) -> Bool = not playing
+
+// drain ループを継続すべきか。
+//   元コード: while (queue.length && !aborted)
+fn should_continue_drain(pending: Int, aborted: Bool) -> Bool = pending > 0 and not aborted
+
+// drain ループ終了後(finally): キューに残りがあれば即座に drain を再起動すべきか。
+//   元コード: cancel 中に enqueue された item が取り残されないよう、残があれば drain() に戻る。
+//   onSpeakingChange を false→true でバウンドさせず「連続 speaking」に見せるためのキモ。
+fn should_restart_drain(pending: Int) -> Bool = pending > 0
+
+// 完全に idle か(再生中でなく、キューも空)。waitForIdle のバリア条件。
+//   元コード: if (!isPlaying && queue.length === 0) return;
+fn is_idle(playing: Bool, pending: Int) -> Bool = (not playing) and pending == 0
+
+// waitForIdle が即座に解決するか(= 既に idle)。そうでなければ resolver を積んで待つ。
+fn barrier_passes(playing: Bool, pending: Int) -> Bool = is_idle(playing, pending)
+
+// drain 終了時に「全部再生しきった(待機者を起こす)」が成立するか。
+//   元コード finally: 残が無ければ onSpeakingChange(false) + idleResolvers を解放。
+fn should_resolve_idle(pending: Int) -> Bool = pending == 0

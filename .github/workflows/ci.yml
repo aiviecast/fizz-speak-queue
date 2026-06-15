@@ -1,0 +1,21 @@
+name: CI
+on: { push: { branches: [main] }, pull_request: { branches: [main] } }
+env: { ALMIDE_VERSION: v0.27.7 }
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with: { path: ~/.almide, key: "${{ runner.os }}-almide-${{ env.ALMIDE_VERSION }}" }
+      - name: Install Almide
+        run: |
+          curl -fsSL -o /tmp/almide.tar.gz "https://github.com/almide/almide/releases/download/${ALMIDE_VERSION}/almide-linux-x86_64.tar.gz"
+          tar xzf /tmp/almide.tar.gz -C /tmp && sudo install /tmp/almide-linux-x86_64/almide /usr/local/bin/almide
+      - run: almide check src/main.almd
+      - run: almide test spec/speak_queue_test.almd
+      - run: mkdir -p build && almide build src/main.almd -o build/fizz-speak-queue
+      - run: almide build src/bridge.almd --target wasm -o build/sq.wasm
+      - run: node test/wasm-smoke.mjs

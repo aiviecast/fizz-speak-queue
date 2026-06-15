@@ -1,0 +1,27 @@
+// CLI エントリポイント (native) — イベント導出と状態機械判定の目視確認。
+import self as sq
+import string
+import json
+import value
+
+effect fn main() -> Unit = {
+  println(json.stringify(value.object([
+    // 再生境界イベント
+    ("events_full", value.str(string.join(sq.play_events("short", "tear"), ">"))),
+    ("events_plain", value.str(string.join(sq.play_events("", ""), ">"))),
+    ("events_hair_only", value.str(string.join(sq.play_events("twin", ""), ">"))),
+    ("count_full", value.int(sq.event_count("short", "tear"))),
+    ("count_plain", value.int(sq.event_count("", ""))),
+    ("mime_default", value.str(sq.resolve_mime(""))),
+    ("mime_keep", value.str(sq.resolve_mime("audio/wav"))),
+    // 状態機械
+    ("start_when_idle", value.bool(sq.should_start_drain(false))),
+    ("start_when_playing", value.bool(sq.should_start_drain(true))),
+    ("continue_2_live", value.bool(sq.should_continue_drain(2, false))),
+    ("continue_aborted", value.bool(sq.should_continue_drain(2, true))),
+    ("restart_with_pending", value.bool(sq.should_restart_drain(1))),
+    ("idle_empty_stopped", value.bool(sq.is_idle(false, 0))),
+    ("idle_while_playing", value.bool(sq.is_idle(true, 0))),
+    ("barrier_passes_idle", value.bool(sq.barrier_passes(false, 0))),
+  ])))
+}

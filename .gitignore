@@ -1,0 +1,4 @@
+build/
+*.wasm
+fizz-speak-queue
+.almide/

@@ -1,0 +1,60 @@
+import self as sq
+import string
+import list
+
+test "fires_hair / fires_fx: 値が非空のとき発火" {
+  assert_eq(sq.fires_hair("short"), true)
+  assert_eq(sq.fires_hair(""), false)
+  assert_eq(sq.fires_fx("tear"), true)
+  assert_eq(sq.fires_fx(""), false)
+}
+
+test "play_events: 発火順 emotion > (hair) > (fx) > reply" {
+  assert_eq(string.join(sq.play_events("short", "tear"), ">"), "emotion>hair>fx>reply")
+  assert_eq(string.join(sq.play_events("", ""), ">"), "emotion>reply")
+  assert_eq(string.join(sq.play_events("twin", ""), ">"), "emotion>hair>reply")
+  assert_eq(string.join(sq.play_events("", "heart"), ">"), "emotion>fx>reply")
+}
+
+test "event_count" {
+  assert_eq(sq.event_count("short", "tear"), 4)
+  assert_eq(sq.event_count("", ""), 2)
+  assert_eq(sq.event_count("twin", ""), 3)
+  assert_eq(sq.event_count("", "heart"), 3)
+}
+
+test "resolve_mime: 既定 audio/mpeg" {
+  assert_eq(sq.resolve_mime(""), "audio/mpeg")
+  assert_eq(sq.resolve_mime("audio/wav"), "audio/wav")
+  assert_eq(sq.resolve_mime("audio/mpeg"), "audio/mpeg")
+}
+
+test "should_start_drain: 再生中でなければ起動" {
+  assert_eq(sq.should_start_drain(false), true)
+  assert_eq(sq.should_start_drain(true), false)
+}
+
+test "should_continue_drain: 残あり かつ 未中断" {
+  assert_eq(sq.should_continue_drain(2, false), true)
+  assert_eq(sq.should_continue_drain(1, false), true)
+  assert_eq(sq.should_continue_drain(0, false), false)   // 残無し
+  assert_eq(sq.should_continue_drain(2, true), false)    // 中断
+}
+
+test "should_restart_drain: cancel 後の取り残し対策" {
+  assert_eq(sq.should_restart_drain(1), true)
+  assert_eq(sq.should_restart_drain(0), false)
+}
+
+test "is_idle / barrier_passes / should_resolve_idle" {
+  // 再生中でなく キュー空 → idle
+  assert_eq(sq.is_idle(false, 0), true)
+  assert_eq(sq.is_idle(true, 0), false)    // 再生中
+  assert_eq(sq.is_idle(false, 3), false)   // 残あり
+  // waitForIdle のバリア = is_idle
+  assert_eq(sq.barrier_passes(false, 0), true)
+  assert_eq(sq.barrier_passes(true, 0), false)
+  // drain 終了時に待機者を起こすか(残無し)
+  assert_eq(sq.should_resolve_idle(0), true)
+  assert_eq(sq.should_resolve_idle(2), false)
+}
