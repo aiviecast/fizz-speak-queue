@@ -7,13 +7,13 @@ import value
 effect fn main() -> Unit = {
   println(json.stringify(value.object([
     // 再生境界イベント
-    ("events_full", value.str(string.join(sq.play_events("short", "tear"), ">"))),
-    ("events_plain", value.str(string.join(sq.play_events("", ""), ">"))),
-    ("events_hair_only", value.str(string.join(sq.play_events("twin", ""), ">"))),
+    ("events_full", value.string(list.join(sq.play_events("short", "tear"), ">"))),
+    ("events_plain", value.string(list.join(sq.play_events("", ""), ">"))),
+    ("events_hair_only", value.string(list.join(sq.play_events("twin", ""), ">"))),
     ("count_full", value.int(sq.event_count("short", "tear"))),
     ("count_plain", value.int(sq.event_count("", ""))),
-    ("mime_default", value.str(sq.resolve_mime(""))),
-    ("mime_keep", value.str(sq.resolve_mime("audio/wav"))),
+    ("mime_default", value.string(sq.resolve_mime(""))),
+    ("mime_keep", value.string(sq.resolve_mime("audio/wav"))),
     // 状態機械
     ("start_when_idle", value.bool(sq.should_start_drain(false))),
     ("start_when_playing", value.bool(sq.should_start_drain(true))),

@@ -9,19 +9,19 @@ import int
 import list
 import string
 
-var g_hair: Bytes = bytes.new(0)
-var g_fx: Bytes = bytes.new(0)
-var g_mime: Bytes = bytes.new(0)
-var g_out: Bytes = bytes.new(0)
+var g_hair: Bytes = bytes.zeros(0)
+var g_fx: Bytes = bytes.zeros(0)
+var g_mime: Bytes = bytes.zeros(0)
+var g_out: Bytes = bytes.zeros(0)
 
 @export(wasm, "hair_alloc")
-fn hair_alloc(len: Float) -> RawPtr = { g_hair = bytes.new(float.to_int(len)); bytes.as_mut_ptr(g_hair) }
+fn hair_alloc(len: Float) -> RawPtr = { g_hair = bytes.zeros(int.from_saturating(len)); bytes.as_mut_ptr(g_hair) }
 
 @export(wasm, "fx_alloc")
-fn fx_alloc(len: Float) -> RawPtr = { g_fx = bytes.new(float.to_int(len)); bytes.as_mut_ptr(g_fx) }
+fn fx_alloc(len: Float) -> RawPtr = { g_fx = bytes.zeros(int.from_saturating(len)); bytes.as_mut_ptr(g_fx) }
 
 @export(wasm, "mime_alloc")
-fn mime_alloc(len: Float) -> RawPtr = { g_mime = bytes.new(float.to_int(len)); bytes.as_mut_ptr(g_mime) }
+fn mime_alloc(len: Float) -> RawPtr = { g_mime = bytes.zeros(int.from_saturating(len)); bytes.as_mut_ptr(g_mime) }
 
 @export(wasm, "out_ptr")
 fn out_ptr() -> RawPtr = bytes.as_mut_ptr(g_out)
@@ -41,14 +41,14 @@ fn w_fires_hair() -> Float = if sq.fires_hair(s_hair()) then 1.0 else 0.0
 fn w_fires_fx() -> Float = if sq.fires_fx(s_fx()) then 1.0 else 0.0
 
 @export(wasm, "event_count")
-fn w_event_count() -> Float = int.to_float(sq.event_count(s_hair(), s_fx()))
+fn w_event_count() -> Float = float.from(sq.event_count(s_hair(), s_fx()))
 
 // 発火イベント種別を改行区切りで g_out に書き長さを返す。
 @export(wasm, "play_events_resolve")
 fn w_play_events() -> Float = {
-  let joined = string.join(sq.play_events(s_hair(), s_fx()), "\n")
+  let joined = list.join(sq.play_events(s_hair(), s_fx()), "\n")
   g_out = bytes.from_string(joined)
-  int.to_float(list.len(string.to_bytes(joined)))
+  float.from(list.len(bytes.to_list(bytes.from_string(joined))))
 }
 
 // 既定解決した mime を g_out に書き長さを返す。
@@ -56,7 +56,7 @@ fn w_play_events() -> Float = {
 fn w_resolve_mime() -> Float = {
   let s = sq.resolve_mime(s_mime())
   g_out = bytes.from_string(s)
-  int.to_float(list.len(string.to_bytes(s)))
+  float.from(list.len(bytes.to_list(bytes.from_string(s))))
 }
 
 // ---- 状態機械(スカラー Float 引数: playing/aborted=0/1, pending=件数) ----
@@ -66,19 +66,19 @@ fn w_should_start_drain(playing: Float) -> Float = if sq.should_start_drain(b(pl
 
 @export(wasm, "should_continue_drain")
 fn w_should_continue_drain(pending: Float, aborted: Float) -> Float =
-  if sq.should_continue_drain(float.to_int(pending), b(aborted)) then 1.0 else 0.0
+  if sq.should_continue_drain(int.from_saturating(pending), b(aborted)) then 1.0 else 0.0
 
 @export(wasm, "should_restart_drain")
-fn w_should_restart_drain(pending: Float) -> Float = if sq.should_restart_drain(float.to_int(pending)) then 1.0 else 0.0
+fn w_should_restart_drain(pending: Float) -> Float = if sq.should_restart_drain(int.from_saturating(pending)) then 1.0 else 0.0
 
 @export(wasm, "is_idle")
-fn w_is_idle(playing: Float, pending: Float) -> Float = if sq.is_idle(b(playing), float.to_int(pending)) then 1.0 else 0.0
+fn w_is_idle(playing: Float, pending: Float) -> Float = if sq.is_idle(b(playing), int.from_saturating(pending)) then 1.0 else 0.0
 
 @export(wasm, "barrier_passes")
-fn w_barrier_passes(playing: Float, pending: Float) -> Float = if sq.barrier_passes(b(playing), float.to_int(pending)) then 1.0 else 0.0
+fn w_barrier_passes(playing: Float, pending: Float) -> Float = if sq.barrier_passes(b(playing), int.from_saturating(pending)) then 1.0 else 0.0
 
 @export(wasm, "should_resolve_idle")
-fn w_should_resolve_idle(pending: Float) -> Float = if sq.should_resolve_idle(float.to_int(pending)) then 1.0 else 0.0
+fn w_should_resolve_idle(pending: Float) -> Float = if sq.should_resolve_idle(int.from_saturating(pending)) then 1.0 else 0.0
 
 effect fn main() -> Unit = {
   let _a = hair_alloc(1.0)
