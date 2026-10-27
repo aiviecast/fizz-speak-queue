@@ -4,6 +4,7 @@
 //   play_events / mime の文字列出力は out_ptr で読む。
 import self as sq
 import bytes
+import ffi
 import float
 import int
 import list
@@ -15,16 +16,16 @@ var g_mime: Bytes = bytes.zeros(0)
 var g_out: Bytes = bytes.zeros(0)
 
 @export(wasm, "hair_alloc")
-fn hair_alloc(len: Float) -> RawPtr = { g_hair = bytes.zeros(int.from_saturating(len)); bytes.as_mut_ptr(g_hair) }
+fn hair_alloc(len: Float) -> RawPtr = { g_hair = bytes.zeros(int.from_saturating(len)); ffi.address(g_hair) }
 
 @export(wasm, "fx_alloc")
-fn fx_alloc(len: Float) -> RawPtr = { g_fx = bytes.zeros(int.from_saturating(len)); bytes.as_mut_ptr(g_fx) }
+fn fx_alloc(len: Float) -> RawPtr = { g_fx = bytes.zeros(int.from_saturating(len)); ffi.address(g_fx) }
 
 @export(wasm, "mime_alloc")
-fn mime_alloc(len: Float) -> RawPtr = { g_mime = bytes.zeros(int.from_saturating(len)); bytes.as_mut_ptr(g_mime) }
+fn mime_alloc(len: Float) -> RawPtr = { g_mime = bytes.zeros(int.from_saturating(len)); ffi.address(g_mime) }
 
 @export(wasm, "out_ptr")
-fn out_ptr() -> RawPtr = bytes.as_mut_ptr(g_out)
+fn out_ptr() -> RawPtr = ffi.address(g_out)
 
 fn s_hair() -> String = bytes.to_string_lossy(bytes.from_list(bytes.to_list(g_hair)))
 fn s_fx() -> String = bytes.to_string_lossy(bytes.from_list(bytes.to_list(g_fx)))
