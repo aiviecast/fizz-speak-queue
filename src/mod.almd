@@ -8,7 +8,6 @@
 // (元コードも「delegate で decouple して unit-test 可能に」と明言している。)
 // 移植元: openaituber src/speech/speakQueue.ts (enqueue/drain/waitForIdle の判定ロジック)。
 
-import string
 import list
 
 // ---- 再生境界イベント導出(item ごとに playAudio 直前に発火する副作用の順序) ----

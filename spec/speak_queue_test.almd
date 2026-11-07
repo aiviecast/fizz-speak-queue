@@ -1,5 +1,4 @@
 import self as sq
-import string
 import list
 
 test "fires_hair / fires_fx: 値が非空のとき発火" {
@@ -10,10 +9,10 @@ test "fires_hair / fires_fx: 値が非空のとき発火" {
 }
 
 test "play_events: 発火順 emotion > (hair) > (fx) > reply" {
-  assert_eq(string.join(sq.play_events("short", "tear"), ">"), "emotion>hair>fx>reply")
-  assert_eq(string.join(sq.play_events("", ""), ">"), "emotion>reply")
-  assert_eq(string.join(sq.play_events("twin", ""), ">"), "emotion>hair>reply")
-  assert_eq(string.join(sq.play_events("", "heart"), ">"), "emotion>fx>reply")
+  assert_eq(list.join(sq.play_events("short", "tear"), ">"), "emotion>hair>fx>reply")
+  assert_eq(list.join(sq.play_events("", ""), ">"), "emotion>reply")
+  assert_eq(list.join(sq.play_events("twin", ""), ">"), "emotion>hair>reply")
+  assert_eq(list.join(sq.play_events("", "heart"), ">"), "emotion>fx>reply")
 }
 
 test "event_count" {

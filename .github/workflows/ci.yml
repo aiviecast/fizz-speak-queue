@@ -1,19 +1,26 @@
 name: CI
 on: { push: { branches: [main] }, pull_request: { branches: [main] } }
-env: { ALMIDE_VERSION: v0.63.0-rc3 }
+env: { ALMIDE_TAG: v0.69.1-rc1 }
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/cache@v4
-        with: { path: ~/.almide, key: "${{ runner.os }}-almide-${{ env.ALMIDE_VERSION }}" }
-      - name: Install Almide
+        with: { path: ~/.almide, key: "${{ runner.os }}-almide-${{ env.ALMIDE_TAG }}" }
+      - name: Install the Almide v0.69.1-rc1 release (checksum-verified)
         run: |
-          curl -fsSL -o /tmp/almide.tar.gz "https://github.com/almide/almide/releases/download/${ALMIDE_VERSION}/almide-linux-x86_64.tar.gz"
-          tar xzf /tmp/almide.tar.gz -C /tmp && sudo install /tmp/almide-linux-x86_64/almide /usr/local/bin/almide
+          set -euo pipefail
+          base=https://github.com/almide/almide/releases/download/$ALMIDE_TAG
+          curl -fsSL -o /tmp/almide-linux-x86_64.tar.gz "$base/almide-linux-x86_64.tar.gz"
+          curl -fsSL -o /tmp/almide-checksums.sha256 "$base/almide-checksums.sha256"
+          (cd /tmp && grep ' almide-linux-x86_64.tar.gz$' almide-checksums.sha256 | sha256sum -c -)
+          tar xzf /tmp/almide-linux-x86_64.tar.gz -C /tmp
+          install -D /tmp/almide-linux-x86_64/almide "$HOME/.local/bin/almide"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/almide" --version
       - run: almide check src/main.almd
       - run: almide test spec/speak_queue_test.almd
       - run: mkdir -p build && almide build src/main.almd -o build/fizz-speak-queue

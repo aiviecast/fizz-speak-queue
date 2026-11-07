@@ -1,4 +1,4 @@
 [package]
 name = "fizz_speak_queue"
-version = "0.1.0"
+version = "0.2.0"
 description = "Fizz speak queue — sequential speak-item playback state machine + per-item boundary event derivation (emotion/hair?/fx?/reply ordering, mime default, drain re-entrancy). Async playback stays host-side. One Almide core, native + wasm."
