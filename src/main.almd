@@ -1,6 +1,5 @@
 // CLI エントリポイント (native) — イベント導出と状態機械判定の目視確認。
 import self as sq
-import string
 import json
 import value
 

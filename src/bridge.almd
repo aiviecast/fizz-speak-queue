@@ -8,7 +8,6 @@ import ffi
 import float
 import int
 import list
-import string
 
 var g_hair: Region = ffi.region(bytes.new())
 var g_fx: Region = ffi.region(bytes.new())

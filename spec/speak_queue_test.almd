@@ -1,5 +1,4 @@
 import self as sq
-import string
 import list
 
 test "fires_hair / fires_fx: 値が非空のとき発火" {
